@@ -34,7 +34,7 @@ public class JmsConsumer {
             int i = 3;
             for (int j = 0; j < i; j++) {
 //                TextMessage textMessage = (TextMessage) consumer.receive();
-                MapMessage message = (MapMessage) consumer.receive();
+                MapMessage message = (MapMessage) consumer.receive();//receive是一个阻塞方法
                 //通知服务器，已经获取了该消息
 //                message.getStringProperty()
                 String strKey = "msgMapKey"+j;
