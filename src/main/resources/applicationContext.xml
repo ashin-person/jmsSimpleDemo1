@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+        xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xmlns:aop="http://www.springframework.org/schema/aop"
+        xmlns:tx="http://www.springframework.org/schema/tx"
+        xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:util="http://www.springframework.org/schema/util"
+
+        xsi:schemaLocation="http://www.springframework.org/schema/beans
+	  http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+
+	  http://www.springframework.org/schema/context
+      http://www.springframework.org/schema/context/spring-context-3.0.xsd
+
+	  http://www.springframework.org/schema/aop
+	  http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+
+	  http://www.springframework.org/schema/tx
+      http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+
+      http://www.springframework.org/schema/mvc
+      http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+    <context:component-scan base-package="ljx.com.ashin.*"/>
+
+    <!-- 读入配置属性文件 -->
+    <!--    <context:property-placeholder location="classpath:jdbc.properties" />-->
+
+    <!-- proxy-target-class默认"false",更改为"ture"使用CGLib动态代理 -->
+    <aop:aspectj-autoproxy proxy-target-class="true" />
+
+    <!--mq的spring配置文件-->
+<!--    <bean id="admins" class="org.apache.activemq.security.AuthenticationUser">
+        <constructor-arg index="0" value="admin" />
+        <constructor-arg index="1" value="password" />
+        <constructor-arg index="2" value="admins,publisher,consumers" />
+    </bean>
+    <bean id="publishers" class="org.apache.activemq.security.AuthenticationUser">
+        <constructor-arg index="0" value="publisher" />
+        <constructor-arg index="1" value="password" />
+        <constructor-arg index="2" value="publisher,consumers" />
+    </bean>
+    <bean id="consumers" class="org.apache.activemq.security.AuthenticationUser">
+        <constructor-arg index="0" value="consumer" />
+        <constructor-arg index="1" value="password" />
+        <constructor-arg index="2" value="consumers" />
+    </bean>
+    <bean id="guests" class="org.apache.activemq.security.AuthenticationUser">
+        <constructor-arg index="0" value="guest" />
+        <constructor-arg index="1" value="password" />
+        <constructor-arg index="2" value="guests" />
+    </bean>
+    <bean id="simpleAuthPlugin" class="org.apache.activemq.security.SimpleAuthenticationPlugin">
+        <property name="users">
+            <util:list>
+                <ref bean="admins" />
+                <ref bean="publishers" />
+                <ref bean="consumers" />
+                <ref bean="guests" />
+            </util:list>
+        </property>
+    </bean>-->
+   <!-- <bean id="broker" class="org.apache.activemq.broker.BrokerService" init-method="start" destroy-method="stop">
+        <property name="brokerName" value="myBroker" />
+        <property name="persistent" value="true" />
+        <property name="transportConnectorURIs">
+            <list>
+                <value>tcp://localhost:61616</value>
+            </list>
+        </property>
+     &lt;!&ndash;   <property name="plugins">
+            <list>
+                <ref bean="simpleAuthPlugin"/>
+            </list>
+        </property>&ndash;&gt;
+    </bean>-->
+
+    <!--<import resource="classpath:spring-dao.xml" />
+
+    &lt;!&ndash; 配置Mybatis的事务管理器，即因为Mybatis底层用的是JDBC事务管事器，所以在这里依然配置JDBC事务管理器 &ndash;&gt;
+    <bean id="dataSourceTransactionManagerID" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="comboPooledDataSourceID"/>
+    </bean>
+
+    &lt;!&ndash; 配置通知,即让哪些方法需要事务支持 &ndash;&gt;
+    <tx:advice id="tx" transaction-manager="dataSourceTransactionManagerID">
+        <tx:attributes>
+            <tx:method name="*" propagation="REQUIRED"/>
+        </tx:attributes>
+    </tx:advice>
+
+    &lt;!&ndash; 配置事务切面，即让哪些包下的类需要事务 &ndash;&gt;
+    <aop:config>
+        <aop:pointcut expression="execution(* com.ashin.service.impl.*.*(..))" id="pointcut"/>
+        <aop:advisor advice-ref="tx" pointcut-ref="pointcut"/>
+    </aop:config>
+-->
+
+    <bean id="jmsFactory" class="org.apache.activemq.pool.PooledConnectionFactory"
+          destroy-method="stop">
+        <property name="connectionFactory">
+            <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+                <property name="brokerURL">
+                    <value>tcp://127.0.0.1:61616</value>
+                </property>
+            </bean>
+        </property>
+        <property name="maxConnections" value="100"></property>
+    </bean>
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+        <property name="connectionFactory" ref="jmsFactory" />
+        <property name="defaultDestination" ref="destinationTopic" />
+        <property name="messageConverter">
+            <bean class="org.springframework.jms.support.converter.SimpleMessageConverter" />
+        </property>
+    </bean>
+    <bean id="destination" class="org.apache.activemq.command.ActiveMQQueue">
+        <constructor-arg index="0" value="spring-queue" />
+    </bean>
+
+    <bean id="destinationTopic" class="org.apache.activemq.command.ActiveMQTopic">
+        <constructor-arg index="0" value="spring-topic" />
+    </bean>
+
+    <bean id="jmsContainer"
+          class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="jmsFactory" />
+        <property name="destination" ref="destinationTopic" />
+        <property name="messageListener" ref="messageListener"/>
+    </bean>
+    <bean id="messageListener"
+          class="ljx.com.ashin.service.MyMessageListener">
+    </bean>
+</beans>
